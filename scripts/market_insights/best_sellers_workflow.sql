@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DECLARE max_date TIMESTAMP;
+SET max_date = (
+  SELECT MAX(_PARTITIONTIME) FROM `{project_id}.{dataset}.BestSellers_TopProducts_{merchant_id}`);
+
 CREATE OR REPLACE TABLE `{project_id}.{dataset}.market_insights_best_sellers_materialized` AS (
   WITH
     best_sellers AS (
@@ -52,7 +56,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset}.market_insights_best_sellers_mat
       JOIN b.ranking_category_path ranking_category_path
       JOIN b.product_title product_title
       WHERE
-        _PARTITIONDATE = DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)
+        _PARTITIONTIME = max_date)
         # Adjust as necessary for other locales
         AND (product_title.locale IN ("en-US") OR product_title.locale IS NULL)
         AND google_product_category_path.locale = "en-US"
@@ -64,7 +68,7 @@ CREATE OR REPLACE TABLE `{project_id}.{dataset}.market_insights_best_sellers_mat
       FROM
         `{project_id}.{dataset}.BestSellers_TopProducts_Inventory_{merchant_id}`
       WHERE
-        _PARTITIONDATE = DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)
+        _PARTITIONTIME = max_date)
     )
   SELECT
     best_sellers.*,
